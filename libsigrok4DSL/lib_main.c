@@ -30,6 +30,11 @@
 #include <windows.h>
 #else
 #include <unistd.h>
+
+#if _POSIX_C_SOURCE >= 199309L 
+// time.h will be needed for nanno sleep since uslepp is deprecated
+#include <time.h>
+#endif
 #endif
 
 #define MAX_DEVCIE_LIST_LENGTH  20
@@ -1721,7 +1726,16 @@ SR_PRIV void xsleep(int ms)
 #ifdef _WIN32
 	Sleep(ms);
 #else
+#if _POSIX_C_SOURCE >= 199309L 
+    struct timespec ts = {
+        .tv_sec = ms/1000
+    };
+    ms -= ts.tv_sec *1000;
+    ts.tv_nsec = ms *1000 ;
+    nanosleep(&ts, NULL);
+#else
 	usleep(ms * 1000);
+#endif
 #endif
 }
 
